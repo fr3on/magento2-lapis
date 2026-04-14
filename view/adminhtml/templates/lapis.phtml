@@ -245,39 +245,58 @@ $resourceIds = $block->getResourceIds();
 
     window.clearHighlights = function(resourceId) {
         if (!window.lapisManager.ready) return;
-        require(['d3'], function(d3) {
-            d3.selectAll(`#svg-${resourceId} .link`).classed("highlighted", false);
-        });
-    };
+        };
 
-    // Initialization block
-    require(['d3', 'domReady!'], function (d3) {
-        function initVizes() {
+        window.resetZoom = function(id) {
+            if (!window.lapisManager.ready || !window.d3) return;
+            const viz = window.lapisManager.vizes[id];
+            if (viz) {
+                viz.svg.transition().duration(750).call(viz.zoom.transform, window.d3.zoomIdentity);
+            }
+        };
+
+        window.highlightTransition = function(resourceId, linkId) {
+            if (!window.lapisManager.ready || !window.d3) return;
+            window.d3.selectAll(`#svg-${resourceId} .link-${linkId}`).classed("highlighted", true);
+        };
+
+        window.clearHighlights = function(resourceId) {
+            if (!window.lapisManager.ready || !window.d3) return;
+            window.d3.selectAll(`#svg-${resourceId} .link`).classed("highlighted", false);
+        };
+
+        // 2. Defensive D3 Loading Pattern
+        const oldDefine = window.define;
+        window.define = undefined; // Hide RequireJS from D3
+
+        const script = document.createElement('script');
+        script.src = 'https://d3js.org/d3.v7.min.js';
+        script.async = true;
+        script.onload = function() {
+            window.define = oldDefine; // Restore RequireJS
+            console.log("LAPIS: D3 loaded defensively.");
+            initLapisVisualizer(window.d3);
+        };
+        document.head.appendChild(script);
+
+        function initLapisVisualizer(d3) {
             Object.keys(window.lapisManager.data).forEach(id => {
                 const data = window.lapisManager.data[id];
                 const svg = d3.select("#svg-" + id);
                 const wrapper = document.getElementById("wrapper-" + id);
                 if (!wrapper) return;
-                
+
                 const width = wrapper.clientWidth;
                 const height = wrapper.clientHeight;
-
-                svg.attr("width", "100%").attr("height", "100%")
-                   .attr("viewBox", `0 0 ${width} ${height}`);
+                svg.attr("width", "100%").attr("height", "100%").attr("viewBox", `0 0 ${width} ${height}`);
 
                 const container = svg.append("g");
                 const zoom = d3.zoom().on("zoom", (e) => container.attr("transform", e.transform));
                 svg.call(zoom);
-                
                 window.lapisManager.vizes[id] = { svg, container, zoom, width, height };
 
                 const nodes = data.states.map(s => ({ ...s, id: s.id }));
-                const links = data.transitions.map(t => ({ 
-                    source: t.from, 
-                    target: t.to, 
-                    label: t.via,
-                    id: `${t.from}-${t.to}`
-                }));
+                const links = data.transitions.map(t => ({ source: t.from, target: t.to, id: `${t.from}-${t.to}` }));
 
                 const simulation = d3.forceSimulation(nodes)
                     .force("link", d3.forceLink(links).id(d => d.id).distance(140))
@@ -286,50 +305,27 @@ $resourceIds = $block->getResourceIds();
                     .force("collision", d3.forceCollide().radius(50));
 
                 svg.append("defs").append("marker")
-                    .attr("id", "arrow-" + id)
-                    .attr("viewBox", "0 -5 10 10")
-                    .attr("refX", 25).attr("refY", 0)
-                    .attr("markerWidth", 5).attr("markerHeight", 5)
-                    .attr("orient", "auto")
-                    .append("path").attr("d", "M0,-5L10,0L0,5").attr("fill", "#d1d5da");
+                    .attr("id", "arrow-" + id).attr("viewBox", "0 -5 10 10")
+                    .attr("refX", 25).attr("refY", 0).attr("markerWidth", 5).attr("markerHeight", 5)
+                    .attr("orient", "auto").append("path").attr("d", "M0,-5L10,0L0,5").attr("fill", "#d1d5da");
 
-                const linkG = container.append("g")
-                    .selectAll("path")
-                    .data(links)
-                    .enter().append("path")
-                    .attr("class", d => `link link-${d.id}`)
-                    .attr("marker-end", `url(#arrow-${id})`);
+                const linkG = container.append("g").selectAll("path").data(links).enter().append("path")
+                    .attr("class", d => `link link-${d.id}`).attr("marker-end", `url(#arrow-${id})`);
 
-                const nodeG = container.append("g")
-                    .selectAll("g")
-                    .data(nodes)
-                    .enter().append("g")
+                const nodeG = container.append("g").selectAll("g").data(nodes).enter().append("g")
                     .attr("class", d => `node ${d.initial ? 'initial' : ''} ${d.terminal ? 'terminal' : ''}`)
                     .on("click", (e, d) => window.toggleFocus(id, d.id))
                     .call(d3.drag()
-                        .on("start", (event) => {
-                            if (!event.active) simulation.alphaTarget(0.3).restart();
-                            event.subject.fx = event.subject.x;
-                            event.subject.fy = event.subject.y;
-                        })
-                        .on("drag", (event) => {
-                            event.subject.fx = event.x;
-                            event.subject.fy = event.y;
-                        })
-                        .on("end", (event) => {
-                            if (!event.active) simulation.alphaTarget(0);
-                            event.subject.fx = null;
-                            event.subject.fy = null;
-                        }));
+                        .on("start", (e) => { if (!e.active) simulation.alphaTarget(0.3).restart(); e.subject.fx = e.x; e.subject.fy = e.y; })
+                        .on("drag", (e) => { e.subject.fx = e.x; e.subject.fy = e.y; })
+                        .on("end", (e) => { if (!e.active) simulation.alphaTarget(0); e.subject.fx = null; e.subject.fy = null; }));
 
                 nodeG.append("circle").attr("r", 15);
                 nodeG.append("text").text(d => d.label).attr("dy", 35).attr("text-anchor", "middle");
 
                 simulation.on("tick", () => {
                     linkG.attr("d", d => {
-                        const dx = d.target.x - d.source.x,
-                              dy = d.target.y - d.source.y,
-                              dr = Math.sqrt(dx * dx + dy * dy) * 1.5;
+                        const dx = d.target.x - d.source.x, dy = d.target.y - d.source.y, dr = Math.sqrt(dx * dx + dy * dy) * 1.5;
                         return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
                     });
                     nodeG.attr("transform", d => `translate(${d.x},${d.y})`);
@@ -337,6 +333,5 @@ $resourceIds = $block->getResourceIds();
             });
             window.lapisManager.ready = true;
         }
-        initVizes();
-    });
+    })();
 </script>
