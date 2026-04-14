@@ -57,7 +57,7 @@ class ValidateCommand extends Command
             return \Magento\Framework\Console\Cli::RETURN_FAILURE;
         }
 
-        $files = $varDir->readDirectory($lapisPath);
+        $files = $varDir->read($lapisPath);
         $validator = new Validator();
         $hasError = false;
 
