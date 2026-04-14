@@ -1,5 +1,15 @@
 var config = {
+    map: {
+        '*': {
+            'd3': 'lapis-d3'
+        }
+    },
     paths: {
-        'd3': 'Fr3on_Lapis/js/d3-native'
+        'lapis-d3': 'Fr3on_Lapis/js/lapis-d3'
+    },
+    shim: {
+        'lapis-d3': {
+            exports: 'd3'
+        }
     }
 };
