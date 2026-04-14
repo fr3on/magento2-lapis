@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RLD (Resource Lifecycle Declaration)",
+  "type": "object",
+  "required": ["resource", "generated", "generator", "api", "states", "transitions"],
+  "properties": {
+    "resource": { "type": "string" },
+    "generated": { "type": "string", "format": "date-time" },
+    "generator": { "type": "string" },
+    "api": {
+      "type": "object",
+      "required": ["name", "version", "base_path"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "base_path": { "type": "string" },
+        "docs": { "type": "string" }
+      }
+    },
+    "state_field": { "type": ["string", "null"] },
+    "inferred": { "type": "boolean" },
+    "states": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "magento_value": { "type": ["string", "number", "null"] },
+          "initial": { "type": "boolean" },
+          "terminal": { "type": "boolean" },
+          "inferred": { "type": "boolean" }
+        }
+      }
+    },
+    "transitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "via", "actor"],
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "string" },
+          "via": { "type": "string" },
+          "actor": { "type": "string" },
+          "endpoint": { "type": ["string", "null"] },
+          "documented": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © fr3on. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Cache/etc/cache.xsd">
+    <type name="lapis_cache" translate="label,description">
+        <label>LAPIS Declarations</label>
+        <description>Cache for LAPIS lifecycle and protocol declarations.</description>
+    </type>
+</config>

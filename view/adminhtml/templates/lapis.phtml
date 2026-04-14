@@ -1,0 +1,187 @@
+<?php
+/** @var \Fr3on\Lapis\Block\Adminhtml\Lapis $block */
+$allData = $block->getAllLapisData();
+$resourceIds = $block->getResourceIds();
+?>
+<div class="lapis-container">
+    <div class="lapis-header">
+        <div class="resource-selector">
+            <label for="lapis-resource-select"><?= $block->escapeHtml(__('Resource')) ?>:</label>
+            <select id="lapis-resource-select" onchange="switchResource(this.value)">
+                <?php foreach ($resourceIds as $id): ?>
+                    <option value="<?= $block->escapeHtml($id) ?>"><?= $block->escapeHtml(ucfirst($id)) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('visual')"><?= $block->escapeHtml(__('Visualizer')) ?></button>
+            <button class="tab-btn" onclick="switchTab('spec')"><?= $block->escapeHtml(__('RLD Spec')) ?></button>
+        </div>
+    </div>
+
+    <?php foreach ($allData as $id => $data): ?>
+        <div id="lapis-resource-<?= $block->escapeHtml($id) ?>" class="resource-panel" style="display: <?= $id === reset($resourceIds) ? 'block' : 'none' ?>;">
+            
+            <!-- Tab Contents -->
+            <div class="tab-content visual-tab">
+                <div class="graph-container">
+                    <svg viewBox="0 0 800 400" id="svg-<?= $block->escapeHtml($id) ?>">
+                        <!-- Links/Transitions will be rendered here -->
+                        <g class="links"></g>
+                        <!-- Nodes/States will be rendered here -->
+                        <g class="nodes"></g>
+                    </svg>
+                </div>
+
+                <div class="details-section">
+                    <h3><?= $block->escapeHtml(__('Transition Protocol')) ?></h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th><?= $block->escapeHtml(__('From')) ?></th>
+                                <th><?= $block->escapeHtml(__('To')) ?></th>
+                                <th><?= $block->escapeHtml(__('Via')) ?></th>
+                                <th><?= $block->escapeHtml(__('Actor')) ?></th>
+                                <th><?= $block->escapeHtml(__('Endpoint')) ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($data['transitions'] as $t): ?>
+                                <tr class="transition-row" data-from="<?= $block->escapeHtml($t['from']) ?>" data-to="<?= $block->escapeHtml($t['to']) ?>">
+                                    <td><code><?= $block->escapeHtml($t['from']) ?></code></td>
+                                    <td><code><?= $block->escapeHtml($t['to']) ?></code></td>
+                                    <td><strong><?= $block->escapeHtml($t['via']) ?></strong></td>
+                                    <td><span class="actor-tag actor-<?= $block->escapeHtml($t['actor']) ?>"><?= $block->escapeHtml($t['actor']) ?></span></td>
+                                    <td><?= $t['endpoint'] ? '<code>' . $block->escapeHtml($t['endpoint']) . '</code>' : '<i>' . $block->escapeHtml(__('implicit')) . '</i>' ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-content spec-tab" style="display: none;">
+                <div class="spec-toolbar">
+                    <button class="copy-btn" onclick="copySpec('spec-<?= $block->escapeHtml($id) ?>')"><?= $block->escapeHtml(__('Copy YAML')) ?></button>
+                </div>
+                <pre id="spec-<?= $block->escapeHtml($id) ?>" class="yaml-block"><?= $block->escapeHtml($block->getYaml($data)) ?></pre>
+            </div>
+        </div>
+    <?php endforeach; ?>
+</div>
+
+<style>
+    .lapis-container { font-family: 'Inter', system-ui; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .lapis-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f1f1; padding-bottom: 15px; margin-bottom: 20px; }
+    .tab-btn { background: none; border: none; padding: 8px 16px; cursor: pointer; border-radius: 4px; font-weight: 600; color: #555; }
+    .tab-btn.active { background: #007bdb; color: #fff; }
+    .graph-container { background: #f9f9fb; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 30px; }
+    .data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .data-table th { text-align: left; background: #f4f4f4; padding: 10px; border-bottom: 2px solid #e0e0e0; }
+    .data-table td { padding: 10px; border-bottom: 1px solid #eee; }
+    .actor-tag { font-size: 0.8em; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+    .actor-admin { background: #fff3e0; color: #e65100; }
+    .actor-system { background: #e3f2fd; color: #0d47a1; }
+    .actor-user { background: #e8f5e9; color: #1b5e20; }
+    .yaml-block { background: #2d2d2d; color: #f8f8f8; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+    .node circle { stroke: #007bdb; stroke-width: 2px; fill: #fff; cursor: pointer; transition: 0.3s; }
+    .node circle:hover { fill: #e3f2fd; r: 12; }
+    .node.initial circle { stroke: #2e7d32; fill: #e8f5e9; }
+    .node.terminal circle { stroke: #c62828; stroke-width: 4px; }
+    .link { stroke: #999; stroke-width: 2; marker-end: url(#arrowhead); }
+    .link:hover { stroke: #007bdb; stroke-width: 4; }
+</style>
+
+<script>
+    const lapisData = <?= json_encode($allData) ?>;
+
+    function switchResource(id) {
+        document.querySelectorAll('.resource-panel').forEach(p => p.style.display = 'none');
+        document.getElementById('lapis-resource-' + id).style.display = 'block';
+        renderGraph(id);
+    }
+
+    function switchTab(type) {
+        const panel = document.querySelector('.resource-panel[style*="display: block"]');
+        panel.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+        panel.querySelector('.' + type + '-tab').style.display = 'block';
+        
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        if (type === 'visual') {
+            const select = document.getElementById('lapis-resource-select');
+            renderGraph(select.value);
+        }
+    }
+
+    function renderGraph(resourceId) {
+        const data = lapisData[resourceId];
+        const svg = document.getElementById('svg-' + resourceId);
+        const nodesG = svg.querySelector('.nodes');
+        const linksG = svg.querySelector('.links');
+        
+        nodesG.innerHTML = '';
+        linksG.innerHTML = '';
+
+        // Add arrowhead marker
+        if (!svg.querySelector('#arrowhead')) {
+            const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+            defs.innerHTML = `<marker id="arrowhead" markerWidth="10" markerHeight="7" refX="22" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#999" />
+            </marker>`;
+            svg.appendChild(defs);
+        }
+
+        const states = data.states;
+        const transitions = data.transitions;
+        
+        // Circular layout for nodes
+        const centerX = 400;
+        const centerY = 200;
+        const radius = 150;
+        const nodePositions = {};
+
+        states.forEach((s, i) => {
+            const angle = (i / states.length) * 2 * Math.PI;
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            nodePositions[s.id] = {x, y};
+
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            g.setAttribute('class', 'node' + (s.initial ? ' initial' : '') + (s.terminal ? ' terminal' : ''));
+            g.innerHTML = `
+                <circle cx="${x}" cy="${y}" r="20" />
+                <text x="${x}" y="${y+35}" text-anchor="middle" font-size="12" font-weight="bold">${s.label}</text>
+            `;
+            nodesG.appendChild(g);
+        });
+
+        transitions.forEach(t => {
+            const start = nodePositions[t.from];
+            const end = nodePositions[t.to];
+            if (start && end) {
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute('x1', start.x);
+                line.setAttribute('y1', start.y);
+                line.setAttribute('x2', end.x);
+                line.setAttribute('y2', end.y);
+                line.setAttribute('class', 'link');
+                linksG.appendChild(line);
+            }
+        });
+    }
+
+    function copySpec(id) {
+        const text = document.getElementById(id).innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('YAML copied to clipboard');
+        });
+    }
+
+    // Initial render
+    window.onload = () => {
+        const initialId = document.getElementById('lapis-resource-select').value;
+        renderGraph(initialId);
+    };
+</script>

@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © fr3on. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- Register Custom Cache Type -->
+    <type name="Fr3on\Lapis\Model\Cache\Type\Lapis">
+        <arguments>
+            <argument name="cacheFrontendPool" xsi:type="object">Magento\Framework\App\Cache\Frontend\Pool</argument>
+        </arguments>
+    </type>
+
+    <!-- Configure Config Data to use Lapis Cache -->
+    <type name="Fr3on\Lapis\Model\Config\Data">
+        <arguments>
+            <argument name="cache" xsi:type="object">Fr3on\Lapis\Model\Cache\Type\Lapis</argument>
+        </arguments>
+    </type>
+
+    <!-- Reader Configuration -->
+    <type name="Fr3on\Lapis\Model\Reader\OrderStateReader">
+        <arguments>
+            <argument name="resourceConnection" xsi:type="object">Magento\Framework\App\ResourceConnection</argument>
+        </arguments>
+    </type>
+
+    <!-- Register Readers for the Generator and Plugin -->
+    <type name="Fr3on\Lapis\Model\Generator\RldGenerator">
+        <arguments>
+            <argument name="readers" xsi:type="array">
+                <item name="order" xsi:type="object">Fr3on\Lapis\Model\Reader\OrderStateReader</item>
+                <item name="invoice" xsi:type="object">Fr3on\Lapis\Model\Reader\InvoiceStateReader</item>
+                <item name="creditmemo" xsi:type="object">Fr3on\Lapis\Model\Reader\CreditmemoStateReader</item>
+                <item name="shipment" xsi:type="object">Fr3on\Lapis\Model\Reader\ShipmentStateReader</item>
+                <item name="cart" xsi:type="object">Fr3on\Lapis\Model\Reader\CartStateReader</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <type name="Fr3on\Lapis\Plugin\Rest\AddLapisHeadersPlugin">
+        <arguments>
+            <argument name="readers" xsi:type="array">
+                <item name="order" xsi:type="object">Fr3on\Lapis\Model\Reader\OrderStateReader</item>
+                <item name="invoice" xsi:type="object">Fr3on\Lapis\Model\Reader\InvoiceStateReader</item>
+                <item name="creditmemo" xsi:type="object">Fr3on\Lapis\Model\Reader\CreditmemoStateReader</item>
+                <item name="shipment" xsi:type="object">Fr3on\Lapis\Model\Reader\ShipmentStateReader</item>
+                <item name="cart" xsi:type="object">Fr3on\Lapis\Model\Reader\CartStateReader</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <type name="Magento\Webapi\Controller\Rest">
+        <plugin name="Fr3on_lapis_headers"
+                type="Fr3on\Lapis\Plugin\Rest\AddLapisHeadersPlugin"
+                sortOrder="100"
+                disabled="false"/>
+    </type>
+
+    <!-- Console Commands -->
+    <type name="Magento\Framework\Console\CommandList">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="lapis_generate" xsi:type="object">Fr3on\Lapis\Console\Command\GenerateCommand</item>
+                <item name="lapis_validate" xsi:type="object">Fr3on\Lapis\Console\Command\ValidateCommand</item>
+            </argument>
+        </arguments>
+    </type>
+</config>

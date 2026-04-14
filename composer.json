@@ -1,0 +1,56 @@
+{
+  "name": "fr3on/magento2-lapis",
+  "description": "Automatic LAPIS lifecycle declarations for Magento 2 REST APIs",
+  "type": "magento2-module",
+  "version": "0.1.0",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "fr3on",
+      "email": "ahmed@0x200.com",
+      "homepage": "https://0x200.com"
+    }
+  ],
+  "keywords": [
+    "magento2", "magento", "lapis", "lifecycle",
+    "api", "rest", "state-machine", "rld", "oip"
+  ],
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://repo.magento.com/"
+    }
+  ],
+  "require": {
+    "php": ">=8.1",
+    "magento/framework": ">=102.0.0",
+    "magento/module-sales": ">=101.0.0",
+    "magento/module-quote": ">=101.0.0",
+    "magento/module-backend": ">=101.0.0",
+    "symfony/yaml": "^6.0 || ^7.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.0",
+    "phpmd/phpmd": "^2.13",
+    "justinrainbow/json-schema": "^5.0"
+  },
+  "autoload": {
+    "files": ["registration.php"],
+    "psr-4": {
+      "Fr3on\\Lapis\\": ""
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Fr3on\\Lapis\\Test\\": "Test/"
+    }
+  },
+  "extra": {
+    "map": [["*", "Fr3on/Lapis"]]
+  },
+  "config": {
+    "allow-plugins": {
+      "magento/composer-dependency-version-audit-plugin": true
+    }
+  }
+}
