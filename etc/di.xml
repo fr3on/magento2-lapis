@@ -9,7 +9,7 @@
     <!-- Register Custom Cache Type -->
     <type name="Fr3on\Lapis\Model\Cache\Type\Lapis">
         <arguments>
-            <argument name="cacheFrontendPool" xsi:type="object">Magento\Framework\App\Cache\Frontend\Pool</argument>
+            <argument name="cacheFrontendPool" xsi:type="object">Magento\Framework\App\Cache\Type\FrontendPool</argument>
         </arguments>
     </type>
 
