@@ -3,71 +3,66 @@
 $allData = $block->getAllLapisData();
 $resourceIds = $block->getResourceIds();
 ?>
-<div class="lapis-dashboard-workspace">
-    <!-- Grid Overlay -->
-    <div class="forensic-grid"></div>
-    <!-- Scanline Effect -->
-    <div class="forensic-scanlines"></div>
-
-    <div class="lapis-app-chrome">
-        <header class="lapis-top-bar">
-            <div class="brand">
-                <span class="brand-id">LAPIS_OS //</span>
-                <span class="brand-status">v0.1.0_STABLE</span>
+<div class="lapis-minimal-workspace">
+    <div class="lapis-chrome">
+        <header class="lapis-header">
+            <div class="header-left">
+                <h1><?= $block->escapeHtml(__('Lifecycle Declarations')) ?></h1>
+                <span class="lapis-ver">v0.2.0</span>
             </div>
-            <div class="controls">
-                <div class="resource-pill">
-                    <label><?= $block->escapeHtml(__('RESOURCE')) ?>:</label>
+            <div class="header-right">
+                <div class="control-group">
+                    <label><?= $block->escapeHtml(__('Resource')) ?></label>
                     <select id="lapis-resource-select" onchange="switchResource(this.value)">
                         <?php foreach ($resourceIds as $id): ?>
-                            <option value="<?= $block->escapeHtml($id) ?>"><?= $block->escapeHtml(strtoupper($id)) ?></option>
+                            <option value="<?= $block->escapeHtml($id) ?>"><?= $block->escapeHtml(ucfirst($id)) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="tab-pills">
-                    <button class="pill active" onclick="switchTab('visual')"><?= $block->escapeHtml(__('VISUALIZER')) ?></button>
-                    <button class="pill" onclick="switchTab('spec')"><?= $block->escapeHtml(__('SPEC')) ?></button>
+                <div class="tab-group">
+                    <button class="tab-pill active" onclick="switchTab('visual')"><?= $block->escapeHtml(__('Visualizer')) ?></button>
+                    <button class="tab-pill" onclick="switchTab('spec')"><?= $block->escapeHtml(__('Source')) ?></button>
                 </div>
             </div>
         </header>
 
-        <main class="lapis-content">
+        <main class="lapis-main">
             <?php foreach ($allData as $id => $data): ?>
                 <div id="lapis-resource-<?= $block->escapeHtml($id) ?>" class="resource-panel" style="display: <?= $id === reset($resourceIds) ? 'flex' : 'none' ?>;">
                     <div class="tab-content visual-tab">
-                        <div class="viz-container">
-                            <div class="viz-toolbar">
-                                <div class="viz-legend">
-                                    <span class="legend-item"><i class="dot initial"></i> <?= $block->escapeHtml(__('INITIAL')) ?></span>
-                                    <span class="legend-item"><i class="dot terminal"></i> <?= $block->escapeHtml(__('TERMINAL')) ?></span>
+                        <div class="graph-area">
+                            <div class="graph-toolbar">
+                                <div class="graph-legend">
+                                    <span class="l-item initial"><?= $block->escapeHtml(__('Start')) ?></span>
+                                    <span class="l-item terminal"><?= $block->escapeHtml(__('End')) ?></span>
                                 </div>
-                                <div class="viz-actions">
-                                    <button onclick="resetZoom('<?= $block->escapeHtml($id) ?>')"><?= $block->escapeHtml(__('RESET_VIEW')) ?></button>
-                                </div>
+                                <button class="btn-reset" onclick="resetZoom('<?= $block->escapeHtml($id) ?>')"><?= $block->escapeHtml(__('Center View')) ?></button>
                             </div>
-                            <div class="svg-wrapper" id="wrapper-<?= $block->escapeHtml($id) ?>">
+                            <div class="svg-container" id="wrapper-<?= $block->escapeHtml($id) ?>">
                                 <svg id="svg-<?= $block->escapeHtml($id) ?>"></svg>
                             </div>
                         </div>
 
-                        <div class="meta-sidebar">
-                            <div class="side-card">
-                                <h3><?= $block->escapeHtml(__('PROTOCOL_INTELLIGENCE')) ?></h3>
-                                <div class="scroll-area">
-                                    <table class="forensic-table">
+                        <div class="data-sidebar">
+                            <div class="sidebar-inner">
+                                <h2><?= $block->escapeHtml(__('Transitions')) ?></h2>
+                                <div class="table-wrap">
+                                    <table class="minimal-table">
                                         <thead>
                                             <tr>
-                                                <th><?= $block->escapeHtml(__('FROM')) ?></th>
-                                                <th><?= $block->escapeHtml(__('TO')) ?></th>
-                                                <th><?= $block->escapeHtml(__('VIA')) ?></th>
+                                                <th><?= $block->escapeHtml(__('Path')) ?></th>
+                                                <th><?= $block->escapeHtml(__('Trigger')) ?></th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <?php foreach ($data['transitions'] as $t): ?>
-                                                <tr onmouseenter="highlightTransition('<?= $block->escapeHtml($id) ?>', '<?= $block->escapeHtml($rowId = $t['from'].'-'.$t['to']) ?>')" onmouseleave="clearHighlights('<?= $block->escapeHtml($id) ?>')">
-                                                    <td><code><?= $block->escapeHtml($t['from']) ?></code></td>
-                                                    <td><code><?= $block->escapeHtml($t['to']) ?></code></td>
-                                                    <td class="via-cell"><?= $block->escapeHtml($t['via']) ?></td>
+                                                <tr onmouseenter="highlightTransition('<?= $block->escapeHtml($id) ?>', '<?= $block->escapeHtml($t['from'].'-'.$t['to']) ?>')" onmouseleave="clearHighlights('<?= $block->escapeHtml($id) ?>')">
+                                                    <td>
+                                                        <span class="node-ref"><?= $block->escapeHtml($t['from']) ?></span>
+                                                        <span class="arrow">→</span>
+                                                        <span class="node-ref"><?= $block->escapeHtml($t['to']) ?></span>
+                                                    </td>
+                                                    <td class="via-val"><?= $block->escapeHtml($t['via']) ?></td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         </tbody>
@@ -78,7 +73,7 @@ $resourceIds = $block->getResourceIds();
                     </div>
 
                     <div class="tab-content spec-tab" style="display: none;">
-                        <pre class="yaml-editor"><?= $block->escapeHtml($block->getYaml($data)) ?></pre>
+                        <pre class="code-block"><?= $block->escapeHtml($block->getYaml($data)) ?></pre>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -88,118 +83,98 @@ $resourceIds = $block->getResourceIds();
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
-    :root {
-        --forensic-bg: #0a0a0b;
-        --forensic-surface: rgba(255, 255, 255, 0.03);
-        --forensic-border: rgba(255, 255, 255, 0.1);
-        --forensic-accent: #00e5ff;
-        --forensic-text: #e0e0e0;
-        --forensic-muted: #888;
-        --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-    }
-
-    .lapis-dashboard-workspace {
-        position: relative;
-        background: var(--forensic-bg);
-        color: var(--forensic-text);
-        min-height: 700px;
+    .lapis-minimal-workspace {
+        --primary: #007bdb;
+        --bg: #ffffff;
+        --bg-alt: #f8f9fa;
+        --border: #e1e4e8;
+        --text: #24292e;
+        --text-muted: #6a737d;
+        --shadow: 0 4px 12px rgba(0,0,0,0.05);
+        
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
         margin: -20px;
         padding: 20px;
-        font-family: var(--font-mono);
+        background: var(--bg-alt);
+        min-height: 700px;
+    }
+
+    .lapis-chrome {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
         overflow: hidden;
-    }
-
-    .forensic-grid {
-        position: absolute;
-        inset: 0;
-        background-image: 
-            linear-gradient(var(--forensic-border) 1px, transparent 1px),
-            linear-gradient(90deg, var(--forensic-border) 1px, transparent 1px);
-        background-size: 40px 40px;
-        opacity: 0.2;
-        pointer-events: none;
-    }
-
-    .forensic-scanlines {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
-        background-size: 100% 4px;
-        z-index: 10;
-        pointer-events: none;
-        opacity: 0.3;
-    }
-
-    .lapis-app-chrome {
-        position: relative;
-        z-index: 20;
         display: flex;
         flex-direction: column;
-        height: 660px;
-        border: 1px solid var(--forensic-border);
-        background: rgba(10, 10, 11, 0.8);
-        backdrop-filter: blur(10px);
+        height: 650px;
     }
 
-    .lapis-top-bar {
+    .lapis-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 20px;
-        background: var(--forensic-surface);
-        border-bottom: 1px solid var(--forensic-border);
+        padding: 15px 25px;
+        border-bottom: 1px solid var(--border);
+        background: #fff;
     }
 
-    .brand-id { color: var(--forensic-accent); font-weight: 800; }
-    .brand-status { color: var(--forensic-muted); font-size: 0.8em; margin-left: 10px; }
+    .header-left { display: flex; align-items: baseline; gap: 10px; }
+    .header-left h1 { margin: 0; font-size: 18px; font-weight: 700; color: var(--text); }
+    .lapis-ver { font-size: 10px; font-weight: 700; color: var(--text-muted); background: var(--bg-alt); padding: 2px 6px; border-radius: 10px; }
 
-    .controls { display: flex; gap: 20px; align-items: center; }
-    .resource-pill, .tab-pills { display: flex; align-items: center; background: #000; border: 1px solid var(--forensic-border); border-radius: 4px; padding: 2px 10px; }
-    .resource-pill select { background: transparent; color: var(--forensic-accent); border: none; font-family: var(--font-mono); cursor: pointer; }
+    .header-right { display: flex; gap: 24px; align-items: center; }
+    .control-group { display: flex; align-items: center; gap: 10px; }
+    .control-group label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+    .control-group select { border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font-size: 13px; color: var(--text); outline: none; }
+
+    .tab-group { display: flex; background: var(--bg-alt); padding: 3px; border-radius: 6px; }
+    .tab-pill { border: none; background: transparent; padding: 6px 16px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-muted); }
+    .tab-pill.active { background: #fff; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+    .resource-panel { height: 100%; display: flex; }
+    .visual-tab { width: 100%; display: flex; }
+    .graph-area { flex: 1; position: relative; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
     
-    .pill { background: transparent; border: none; color: var(--forensic-muted); padding: 4px 12px; cursor: pointer; font-family: var(--font-mono); font-size: 0.9em; }
-    .pill.active { color: var(--forensic-accent); text-shadow: 0 0 8px var(--forensic-accent); }
+    .graph-toolbar { padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; background: #fff; z-index: 10; }
+    .graph-legend { display: flex; gap: 16px; font-size: 11px; font-weight: 600; }
+    .l-item { display: flex; align-items: center; gap: 6px; }
+    .l-item::before { content: ''; width: 8px; height: 8px; border-radius: 50%; }
+    .l-item.initial::before { background: #28a745; }
+    .l-item.terminal::before { background: #d73a49; }
 
-    .lapis-content { flex: 1; position: relative; }
-    .resource-panel { display: none; height: 100%; flex-direction: row; }
-    .visual-tab { display: flex; width: 100%; height: 100%; }
+    .btn-reset { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; font-size: 11px; cursor: pointer; color: var(--text-muted); }
+    .btn-reset:hover { border-color: var(--primary); color: var(--primary); }
 
-    .viz-container { flex: 1; position: relative; border-right: 1px solid var(--forensic-border); }
-    .svg-wrapper { width: 100%; height: 600px; cursor: crosshair; }
+    .svg-container { flex: 1; min-height: 500px; background: #fff; }
+
+    .data-sidebar { width: 320px; background: #fff; }
+    .sidebar-inner { padding: 20px; height: 100%; display: flex; flex-direction: column; }
+    .sidebar-inner h2 { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 15px; }
+
+    .table-wrap { flex: 1; overflow-y: auto; }
+    .minimal-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .minimal-table th { text-align: left; padding: 8px 0; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+    .minimal-table td { padding: 10px 0; border-bottom: 1px solid var(--bg-alt); }
+    .node-ref { background: var(--bg-alt); padding: 2px 4px; border-radius: 3px; font-family: monospace; }
+    .arrow { color: var(--text-muted); opacity: 0.5; margin: 0 4px; }
+    .via-val { color: var(--primary); font-weight: 600; }
+
+    .code-block { margin: 0; padding: 25px; background: #f6f8fa; color: #24292e; font-size: 13px; line-height: 1.5; height: 500px; overflow: auto; }
+
+    /* D3 Minimal Styles */
+    .link { stroke: #e1e4e8; stroke-width: 1.5; fill: none; transition: stroke 0.2s; }
+    .link.highlighted { stroke: var(--primary); stroke-width: 2.5; }
     
-    .viz-toolbar { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; z-index: 30; }
-    .viz-legend { font-size: 0.75em; display: flex; gap: 15px; }
-    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
-    .dot.initial { background: #00e676; box-shadow: 0 0 5px #00e676; }
-    .dot.terminal { background: #ff1744; box-shadow: 0 0 5px #ff1744; }
+    .node circle { fill: #fff; stroke: #d1d5da; stroke-width: 2; cursor: pointer; transition: 0.2s; }
+    .node:hover circle { stroke: var(--primary); stroke-width: 3; }
+    .node text { fill: var(--text); font-size: 10px; font-weight: 600; pointer-events: none; }
+    .node.initial circle { stroke: #28a745; fill: #f0fff4; }
+    .node.terminal circle { stroke: #d73a49; fill: #ffeef0; }
 
-    .viz-actions button { background: var(--forensic-surface); border: 1px solid var(--forensic-border); color: #fff; font-size: 0.7em; cursor: pointer; padding: 2px 8px; }
-
-    .meta-sidebar { width: 300px; background: rgba(0,0,0,0.2); display: flex; flex-direction: column; }
-    .side-card { padding: 15px; height: 100%; }
-    .side-card h3 { font-size: 0.8em; color: var(--forensic-muted); margin-bottom: 15px; border-left: 2px solid var(--forensic-accent); padding-left: 10px; }
-    .scroll-area { height: 500px; overflow-y: auto; }
-
-    .forensic-table { width: 100%; border-collapse: collapse; font-size: 0.75em; }
-    .forensic-table th { text-align: left; padding: 8px; color: var(--forensic-muted); border-bottom: 1px solid var(--forensic-border); }
-    .forensic-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .via-cell { color: var(--forensic-accent); font-weight: bold; }
-
-    .yaml-editor { background: #000; color: #a9ffaf; padding: 20px; font-size: 13px; height: 560px; overflow: auto; margin: 0; }
-
-    /* D3 Styles */
-    .link { stroke: rgba(255, 255, 255, 0.15); stroke-width: 1.5; fill: none; transition: stroke 0.3s; }
-    .link.highlighted { stroke: var(--forensic-accent); stroke-width: 3; filter: drop-shadow(0 0 5px var(--forensic-accent)); }
-    .link-label-bg { fill: #000; stroke: var(--forensic-border); }
-    .link-label-text { fill: var(--forensic-muted); font-size: 10px; font-weight: bold; pointer-events: none; }
-    
-    .node circle { fill: #1a1a1c; stroke: var(--forensic-border); stroke-width: 2; transition: all 0.3s; }
-    .node:hover circle { stroke: var(--forensic-accent); stroke-width: 3; r: 18; }
-    .node text { fill: #fff; font-size: 10px; pointer-events: none; text-shadow: 0 0 3px #000; }
-    .node.initial circle { stroke: #00e676; stroke-width: 3; }
-    .node.terminal circle { stroke: #ff1744; stroke-width: 3; }
-
-    .particle { fill: var(--forensic-accent); filter: blur(1px); }
+    .focus-dim { opacity: 0.1 !important; }
+    .focus-active { opacity: 1 !important; }
 </style>
 
 <script>
@@ -232,51 +207,44 @@ $resourceIds = $block->getResourceIds();
             }));
 
             const simulation = d3.forceSimulation(nodes)
-                .force("link", d3.forceLink(links).id(d => d.id).distance(150))
-                .force("charge", d3.forceManyBody().strength(-500))
+                .force("link", d3.forceLink(links).id(d => d.id).distance(140))
+                .force("charge", d3.forceManyBody().strength(-400))
                 .force("center", d3.forceCenter(width / 2, height / 2))
-                .force("collision", d3.forceCollide().radius(60));
+                .force("collision", d3.forceCollide().radius(50));
 
-            // Define Arrowheads
+            // Define Minimal Arrow
             svg.append("defs").append("marker")
                 .attr("id", "arrow-" + id)
                 .attr("viewBox", "0 -5 10 10")
                 .attr("refX", 25)
                 .attr("refY", 0)
-                .attr("markerWidth", 6)
-                .attr("markerHeight", 6)
+                .attr("markerWidth", 5)
+                .attr("markerHeight", 5)
                 .attr("orient", "auto")
                 .append("path")
                 .attr("d", "M0,-5L10,0L0,5")
-                .attr("fill", "rgba(255,255,255,0.4)");
+                .attr("fill", "#d1d5da");
 
-            const linkG = container.append("g").attr("class", "links-layer")
+            const linkG = container.append("g")
                 .selectAll("path")
                 .data(links)
                 .enter().append("path")
                 .attr("class", d => `link link-${d.id}`)
                 .attr("marker-end", `url(#arrow-${id})`);
 
-            // Particle animation
-            const particles = container.append("g").attr("class", "particles-layer")
-                .selectAll("circle")
-                .data(links)
-                .enter().append("circle")
-                .attr("class", "particle")
-                .attr("r", 2);
-
-            const nodeG = container.append("g").attr("class", "nodes-layer")
+            const nodeG = container.append("g")
                 .selectAll("g")
                 .data(nodes)
                 .enter().append("g")
                 .attr("class", d => `node ${d.initial ? 'initial' : ''} ${d.terminal ? 'terminal' : ''}`)
+                .on("click", (e, d) => toggleFocus(id, d.id))
                 .call(d3.drag()
                     .on("start", dragstarted)
                     .on("drag", dragged)
                     .on("end", dragended));
 
             nodeG.append("circle").attr("r", 15);
-            nodeG.append("text").text(d => d.label).attr("dy", 30).attr("text-anchor", "middle");
+            nodeG.append("text").text(d => d.label).attr("dy", 35).attr("text-anchor", "middle");
 
             simulation.on("tick", () => {
                 linkG.attr("d", d => {
@@ -285,23 +253,7 @@ $resourceIds = $block->getResourceIds();
                           dr = Math.sqrt(dx * dx + dy * dy) * 1.5;
                     return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
                 });
-
                 nodeG.attr("transform", d => `translate(${d.x},${d.y})`);
-                
-                // Move particles along paths
-                particles.attr("cx", d => {
-                    const path = linkG.filter(l => l === d).node();
-                    if (path) {
-                        const t = (Date.now() % 3000) / 3000;
-                        return path.getPointAtLength(path.getTotalLength() * t).x;
-                    }
-                }).attr("cy", d => {
-                    const path = linkG.filter(l => l === d).node();
-                    if (path) {
-                        const t = (Date.now() % 3000) / 3000;
-                        return path.getPointAtLength(path.getTotalLength() * t).y;
-                    }
-                });
             });
 
             function dragstarted(event) {
@@ -321,6 +273,28 @@ $resourceIds = $block->getResourceIds();
         });
     }
 
+    let focusedNodeId = null;
+
+    function toggleFocus(resourceId, nodeId) {
+        const svg = d3.select("#svg-" + resourceId);
+        if (focusedNodeId === nodeId) {
+            svg.selectAll(".node, .link").classed("focus-dim", false).classed("focus-active", false);
+            focusedNodeId = null;
+        } else {
+            svg.selectAll(".node, .link").classed("focus-dim", true).classed("focus-active", false);
+            
+            // Highlight node and connected links
+            svg.selectAll(".node").filter(d => d.id === nodeId).classed("focus-active", true).classed("focus-dim", false);
+            svg.selectAll(".link").filter(d => d.source.id === nodeId || d.target.id === nodeId)
+                .classed("focus-active", true).classed("focus-dim", false)
+                .each(function(d) {
+                    svg.selectAll(".node").filter(n => n.id === d.source.id || n.id === d.target.id)
+                        .classed("focus-active", true).classed("focus-dim", false);
+                });
+            focusedNodeId = nodeId;
+        }
+    }
+
     function switchResource(id) {
         document.querySelectorAll('.resource-panel').forEach(p => p.style.display = 'none');
         document.getElementById('lapis-resource-' + id).style.display = 'flex';
@@ -331,13 +305,14 @@ $resourceIds = $block->getResourceIds();
         panel.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
         panel.querySelector('.' + type + '-tab').style.display = (type === 'visual' ? 'flex' : 'block');
         
-        document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
         event.target.classList.add('active');
     }
 
     function resetZoom(id) {
         const viz = vizes[id];
-        viz.svg.transition().duration(750).call(viz.zoom.transform, d3.zoomIdentity);
+        viz.svg.transition().duration(750)
+               .call(viz.zoom.transform, d3.zoomIdentity);
     }
 
     function highlightTransition(resourceId, linkId) {
@@ -348,6 +323,5 @@ $resourceIds = $block->getResourceIds();
         d3.selectAll(`#svg-${resourceId} .link`).classed("highlighted", false);
     }
 
-    // Start with a slight delay to ensure widths are calculated
     window.onload = () => setTimeout(initVizes, 100);
 </script>
