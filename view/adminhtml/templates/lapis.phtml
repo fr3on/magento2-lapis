@@ -178,150 +178,159 @@ $resourceIds = $block->getResourceIds();
 </style>
 
 <script>
-    const lapisData = <?= json_encode($allData) ?>;
-    const vizes = {};
+    require(['d3', 'domReady!'], function (d3) {
+        const lapisData = <?= json_encode($allData) ?>;
+        const vizes = {};
 
-    function initVizes() {
-        Object.keys(lapisData).forEach(id => {
-            const data = lapisData[id];
-            const svg = d3.select("#svg-" + id);
-            const wrapper = document.getElementById("wrapper-" + id);
-            const width = wrapper.clientWidth;
-            const height = wrapper.clientHeight;
+        function initVizes() {
+            Object.keys(lapisData).forEach(id => {
+                const data = lapisData[id];
+                const svg = d3.select("#svg-" + id);
+                const wrapper = document.getElementById("wrapper-" + id);
+                if (!wrapper) return;
+                
+                const width = wrapper.clientWidth;
+                const height = wrapper.clientHeight;
 
-            svg.attr("width", "100%").attr("height", "100%")
-               .attr("viewBox", `0 0 ${width} ${height}`);
+                svg.attr("width", "100%").attr("height", "100%")
+                   .attr("viewBox", `0 0 ${width} ${height}`);
 
-            const container = svg.append("g");
-            const zoom = d3.zoom().on("zoom", (e) => container.attr("transform", e.transform));
-            svg.call(zoom);
-            
-            vizes[id] = { svg, container, zoom, width, height };
+                const container = svg.append("g");
+                const zoom = d3.zoom().on("zoom", (e) => container.attr("transform", e.transform));
+                svg.call(zoom);
+                
+                vizes[id] = { svg, container, zoom, width, height };
 
-            const nodes = data.states.map(s => ({ ...s, id: s.id }));
-            const links = data.transitions.map(t => ({ 
-                source: t.from, 
-                target: t.to, 
-                label: t.via,
-                id: `${t.from}-${t.to}`
-            }));
+                const nodes = data.states.map(s => ({ ...s, id: s.id }));
+                const links = data.transitions.map(t => ({ 
+                    source: t.from, 
+                    target: t.to, 
+                    label: t.via,
+                    id: `${t.from}-${t.to}`
+                }));
 
-            const simulation = d3.forceSimulation(nodes)
-                .force("link", d3.forceLink(links).id(d => d.id).distance(140))
-                .force("charge", d3.forceManyBody().strength(-400))
-                .force("center", d3.forceCenter(width / 2, height / 2))
-                .force("collision", d3.forceCollide().radius(50));
+                const simulation = d3.forceSimulation(nodes)
+                    .force("link", d3.forceLink(links).id(d => d.id).distance(140))
+                    .force("charge", d3.forceManyBody().strength(-400))
+                    .force("center", d3.forceCenter(width / 2, height / 2))
+                    .force("collision", d3.forceCollide().radius(50));
 
-            // Define Minimal Arrow
-            svg.append("defs").append("marker")
-                .attr("id", "arrow-" + id)
-                .attr("viewBox", "0 -5 10 10")
-                .attr("refX", 25)
-                .attr("refY", 0)
-                .attr("markerWidth", 5)
-                .attr("markerHeight", 5)
-                .attr("orient", "auto")
-                .append("path")
-                .attr("d", "M0,-5L10,0L0,5")
-                .attr("fill", "#d1d5da");
+                // Define Minimal Arrow
+                svg.append("defs").append("marker")
+                    .attr("id", "arrow-" + id)
+                    .attr("viewBox", "0 -5 10 10")
+                    .attr("refX", 25)
+                    .attr("refY", 0)
+                    .attr("markerWidth", 5)
+                    .attr("markerHeight", 5)
+                    .attr("orient", "auto")
+                    .append("path")
+                    .attr("d", "M0,-5L10,0L0,5")
+                    .attr("fill", "#d1d5da");
 
-            const linkG = container.append("g")
-                .selectAll("path")
-                .data(links)
-                .enter().append("path")
-                .attr("class", d => `link link-${d.id}`)
-                .attr("marker-end", `url(#arrow-${id})`);
+                const linkG = container.append("g")
+                    .selectAll("path")
+                    .data(links)
+                    .enter().append("path")
+                    .attr("class", d => `link link-${d.id}`)
+                    .attr("marker-end", `url(#arrow-${id})`);
 
-            const nodeG = container.append("g")
-                .selectAll("g")
-                .data(nodes)
-                .enter().append("g")
-                .attr("class", d => `node ${d.initial ? 'initial' : ''} ${d.terminal ? 'terminal' : ''}`)
-                .on("click", (e, d) => toggleFocus(id, d.id))
-                .call(d3.drag()
-                    .on("start", dragstarted)
-                    .on("drag", dragged)
-                    .on("end", dragended));
+                const nodeG = container.append("g")
+                    .selectAll("g")
+                    .data(nodes)
+                    .enter().append("g")
+                    .attr("class", d => `node ${d.initial ? 'initial' : ''} ${d.terminal ? 'terminal' : ''}`)
+                    .on("click", (e, d) => toggleFocus(id, d.id))
+                    .call(d3.drag()
+                        .on("start", dragstarted)
+                        .on("drag", dragged)
+                        .on("end", dragended));
 
-            nodeG.append("circle").attr("r", 15);
-            nodeG.append("text").text(d => d.label).attr("dy", 35).attr("text-anchor", "middle");
+                nodeG.append("circle").attr("r", 15);
+                nodeG.append("text").text(d => d.label).attr("dy", 35).attr("text-anchor", "middle");
 
-            simulation.on("tick", () => {
-                linkG.attr("d", d => {
-                    const dx = d.target.x - d.source.x,
-                          dy = d.target.y - d.source.y,
-                          dr = Math.sqrt(dx * dx + dy * dy) * 1.5;
-                    return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
+                simulation.on("tick", () => {
+                    linkG.attr("d", d => {
+                        const dx = d.target.x - d.source.x,
+                              dy = d.target.y - d.source.y,
+                              dr = Math.sqrt(dx * dx + dy * dy) * 1.5;
+                        return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
+                    });
+                    nodeG.attr("transform", d => `translate(${d.x},${d.y})`);
                 });
-                nodeG.attr("transform", d => `translate(${d.x},${d.y})`);
+
+                function dragstarted(event) {
+                    if (!event.active) simulation.alphaTarget(0.3).restart();
+                    event.subject.fx = event.subject.x;
+                    event.subject.fy = event.subject.y;
+                }
+                function dragged(event) {
+                    event.subject.fx = event.x;
+                    event.subject.fy = event.y;
+                }
+                function dragended(event) {
+                    if (!event.active) simulation.alphaTarget(0);
+                    event.subject.fx = null;
+                    event.subject.fy = null;
+                    simulation.alphaTarget(0.3).restart(); // Allow graph to settle
+                }
             });
-
-            function dragstarted(event) {
-                if (!event.active) simulation.alphaTarget(0.3).restart();
-                event.subject.fx = event.subject.x;
-                event.subject.fy = event.subject.y;
-            }
-            function dragged(event) {
-                event.subject.fx = event.x;
-                event.subject.fy = event.y;
-            }
-            function dragended(event) {
-                if (!event.active) simulation.alphaTarget(0);
-                event.subject.fx = null;
-                event.subject.fy = null;
-            }
-        });
-    }
-
-    let focusedNodeId = null;
-
-    function toggleFocus(resourceId, nodeId) {
-        const svg = d3.select("#svg-" + resourceId);
-        if (focusedNodeId === nodeId) {
-            svg.selectAll(".node, .link").classed("focus-dim", false).classed("focus-active", false);
-            focusedNodeId = null;
-        } else {
-            svg.selectAll(".node, .link").classed("focus-dim", true).classed("focus-active", false);
-            
-            // Highlight node and connected links
-            svg.selectAll(".node").filter(d => d.id === nodeId).classed("focus-active", true).classed("focus-dim", false);
-            svg.selectAll(".link").filter(d => d.source.id === nodeId || d.target.id === nodeId)
-                .classed("focus-active", true).classed("focus-dim", false)
-                .each(function(d) {
-                    svg.selectAll(".node").filter(n => n.id === d.source.id || n.id === d.target.id)
-                        .classed("focus-active", true).classed("focus-dim", false);
-                });
-            focusedNodeId = nodeId;
         }
-    }
 
-    function switchResource(id) {
-        document.querySelectorAll('.resource-panel').forEach(p => p.style.display = 'none');
-        document.getElementById('lapis-resource-' + id).style.display = 'flex';
-    }
+        let focusedNodeId = null;
 
-    function switchTab(type) {
-        const panel = document.querySelector('.resource-panel[style*="display: flex"]');
-        panel.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-        panel.querySelector('.' + type + '-tab').style.display = (type === 'visual' ? 'flex' : 'block');
-        
-        document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active');
-    }
+        window.toggleFocus = function(resourceId, nodeId) {
+            const svg = d3.select("#svg-" + resourceId);
+            if (focusedNodeId === nodeId) {
+                svg.selectAll(".node, .link").classed("focus-dim", false).classed("focus-active", false);
+                focusedNodeId = null;
+            } else {
+                svg.selectAll(".node, .link").classed("focus-dim", true).classed("focus-active", false);
+                
+                // Highlight node and connected links
+                svg.selectAll(".node").filter(d => d.id === nodeId).classed("focus-active", true).classed("focus-dim", false);
+                svg.selectAll(".link").filter(d => d.source.id === nodeId || d.target.id === nodeId)
+                    .classed("focus-active", true).classed("focus-dim", false)
+                    .each(function(d) {
+                        svg.selectAll(".node").filter(n => n.id === d.source.id || n.id === d.target.id)
+                            .classed("focus-active", true).classed("focus-dim", false);
+                    });
+                focusedNodeId = nodeId;
+            }
+        };
 
-    function resetZoom(id) {
-        const viz = vizes[id];
-        viz.svg.transition().duration(750)
-               .call(viz.zoom.transform, d3.zoomIdentity);
-    }
+        window.switchResource = function(id) {
+            document.querySelectorAll('.resource-panel').forEach(p => p.style.display = 'none');
+            document.getElementById('lapis-resource-' + id).style.display = 'flex';
+        };
 
-    function highlightTransition(resourceId, linkId) {
-        d3.selectAll(`#svg-${resourceId} .link-${linkId}`).classed("highlighted", true);
-    }
+        window.switchTab = function(type) {
+            const panel = document.querySelector('.resource-panel[style*="display: flex"]');
+            if (!panel) return;
+            panel.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            panel.querySelector('.' + type + '-tab').style.display = (type === 'visual' ? 'flex' : 'block');
+            
+            document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        };
 
-    function clearHighlights(resourceId) {
-        d3.selectAll(`#svg-${resourceId} .link`).classed("highlighted", false);
-    }
+        window.resetZoom = function(id) {
+            const viz = vizes[id];
+            if (viz) {
+                viz.svg.transition().duration(750)
+                       .call(viz.zoom.transform, d3.zoomIdentity);
+            }
+        };
 
-    window.onload = () => setTimeout(initVizes, 100);
+        window.highlightTransition = function(resourceId, linkId) {
+            d3.selectAll(`#svg-${resourceId} .link-${linkId}`).classed("highlighted", true);
+        };
+
+        window.clearHighlights = function(resourceId) {
+            d3.selectAll(`#svg-${resourceId} .link`).classed("highlighted", false);
+        };
+
+        // Initialize vizes
+        initVizes();
+    });
 </script>
