@@ -6,7 +6,7 @@
  */
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Cache/etc/cache.xsd">
-    <type name="lapis_cache" translate="label,description">
+    <type name="lapis_cache" translate="label,description" instance="Fr3on\Lapis\Model\Cache\Type\Lapis">
         <label>LAPIS Declarations</label>
         <description>Cache for LAPIS lifecycle and protocol declarations.</description>
     </type>
