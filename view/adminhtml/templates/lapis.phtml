@@ -178,67 +178,72 @@ $resourceIds = $block->getResourceIds();
 </style>
 
 <script>
+    // 1. Immediate Global Setup for Helpers & State
+    window.lapisManager = {
+        ready: false,
+        vizes: {},
+        focusedNodeId: null,
+        data: <?= json_encode($allData) ?>
+    };
+
+    window.switchResource = function(id) {
+        document.querySelectorAll('.resource-panel').forEach(p => p.style.display = 'none');
+        const target = document.getElementById('lapis-resource-' + id);
+        if (target) target.style.display = 'flex';
+    };
+
+    window.switchTab = function(type) {
+        const panel = document.querySelector('.resource-panel[style*="display: flex"]');
+        if (!panel) return;
+        panel.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+        const content = panel.querySelector('.' + type + '-tab');
+        if (content) content.style.display = (type === 'visual' ? 'flex' : 'block');
+        document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+        if (window.event && window.event.target) window.event.target.classList.add('active');
+    };
+
+    window.resetZoom = function(id) {
+        if (!window.lapisManager.ready) return;
+        const viz = window.lapisManager.vizes[id];
+        if (viz) {
+            viz.svg.transition().duration(750).call(viz.zoom.transform, window.d3.zoomIdentity);
+        }
+    };
+
+    window.highlightTransition = function(resourceId, linkId) {
+        if (!window.lapisManager.ready) return;
+        window.d3.selectAll(`#svg-${resourceId} .link-${linkId}`).classed("highlighted", true);
+    };
+
+    window.clearHighlights = function(resourceId) {
+        if (!window.lapisManager.ready) return;
+        window.d3.selectAll(`#svg-${resourceId} .link`).classed("highlighted", false);
+    };
+
+    window.toggleFocus = function(resourceId, nodeId) {
+        if (!window.lapisManager.ready) return;
+        const d3 = window.d3;
+        const svg = d3.select("#svg-" + resourceId);
+        if (window.lapisManager.focusedNodeId === nodeId) {
+            svg.selectAll(".node, .link").classed("focus-dim", false).classed("focus-active", false);
+            window.lapisManager.focusedNodeId = null;
+        } else {
+            svg.selectAll(".node, .link").classed("focus-dim", true).classed("focus-active", false);
+            svg.selectAll(".node").filter(d => d.id === nodeId).classed("focus-active", true).classed("focus-dim", false);
+            svg.selectAll(".link").filter(d => d.source.id === nodeId || d.target.id === nodeId)
+                .classed("focus-active", true).classed("focus-dim", false)
+                .each(function(d) {
+                    svg.selectAll(".node").filter(n => n.id === d.source.id || n.id === d.target.id)
+                        .classed("focus-active", true).classed("focus-dim", false);
+                });
+            window.lapisManager.focusedNodeId = nodeId;
+        }
+    };
+
+    // 2. Asynchronous Graph Engine
     require(['d3', 'domReady!'], function (d3) {
-        // 1. Initialization and Global Access
         window.d3 = d3;
-        window.lapisManager = {
-            ready: false,
-            vizes: {},
-            focusedNodeId: null,
-            data: <?= json_encode($allData) ?>
-        };
-
-        // 2. Global Helpers
-        window.switchResource = function(id) {
-            document.querySelectorAll('.resource-panel').forEach(p => p.style.display = 'none');
-            const target = document.getElementById('lapis-resource-' + id);
-            if (target) target.style.display = 'flex';
-        };
-
-        window.switchTab = function(type) {
-            const panel = document.querySelector('.resource-panel[style*="display: flex"]');
-            if (!panel) return;
-            panel.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-            const content = panel.querySelector('.' + type + '-tab');
-            if (content) content.style.display = (type === 'visual' ? 'flex' : 'block');
-            document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
-            if (window.event && window.event.target) window.event.target.classList.add('active');
-        };
-
-        window.toggleFocus = function(resourceId, nodeId) {
-            const svg = d3.select("#svg-" + resourceId);
-            if (window.lapisManager.focusedNodeId === nodeId) {
-                svg.selectAll(".node, .link").classed("focus-dim", false).classed("focus-active", false);
-                window.lapisManager.focusedNodeId = null;
-            } else {
-                svg.selectAll(".node, .link").classed("focus-dim", true).classed("focus-active", false);
-                svg.selectAll(".node").filter(d => d.id === nodeId).classed("focus-active", true).classed("focus-dim", false);
-                svg.selectAll(".link").filter(d => d.source.id === nodeId || d.target.id === nodeId)
-                    .classed("focus-active", true).classed("focus-dim", false)
-                    .each(function(d) {
-                        svg.selectAll(".node").filter(n => n.id === d.source.id || n.id === d.target.id)
-                            .classed("focus-active", true).classed("focus-dim", false);
-                    });
-                window.lapisManager.focusedNodeId = nodeId;
-            }
-        };
-
-        window.resetZoom = function(id) {
-            const viz = window.lapisManager.vizes[id];
-            if (viz) {
-                viz.svg.transition().duration(750).call(viz.zoom.transform, d3.zoomIdentity);
-            }
-        };
-
-        window.highlightTransition = function(resourceId, linkId) {
-            d3.selectAll(`#svg-${resourceId} .link-${linkId}`).classed("highlighted", true);
-        };
-
-        window.clearHighlights = function(resourceId) {
-            d3.selectAll(`#svg-${resourceId} .link`).classed("highlighted", false);
-        };
-
-        // 3. Graph Engine
+        
         function initLapisVisualizer() {
             Object.keys(window.lapisManager.data).forEach(id => {
                 const data = window.lapisManager.data[id];
