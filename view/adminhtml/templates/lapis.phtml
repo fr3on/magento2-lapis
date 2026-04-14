@@ -178,13 +178,83 @@ $resourceIds = $block->getResourceIds();
 </style>
 
 <script>
-    require(['d3', 'domReady!'], function (d3) {
-        const lapisData = <?= json_encode($allData) ?>;
-        const vizes = {};
+    // Global state and safety wrappers
+    window.lapisManager = {
+        ready: false,
+        vizes: {},
+        focusedNodeId: null,
+        data: <?= json_encode($allData) ?>
+    };
 
+    // Immediate global functions
+    window.switchResource = function(id) {
+        document.querySelectorAll('.resource-panel').forEach(p => p.style.display = 'none');
+        const target = document.getElementById('lapis-resource-' + id);
+        if (target) target.style.display = 'flex';
+    };
+
+    window.switchTab = function(type) {
+        const panel = document.querySelector('.resource-panel[style*="display: flex"]');
+        if (!panel) return;
+        panel.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+        const content = panel.querySelector('.' + type + '-tab');
+        if (content) content.style.display = (type === 'visual' ? 'flex' : 'block');
+        
+        document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+        if (event && event.target) {
+            event.target.classList.add('active');
+        }
+    };
+
+    window.toggleFocus = function(resourceId, nodeId) {
+        if (!window.lapisManager.ready) return;
+        require(['d3'], function(d3) {
+            const svg = d3.select("#svg-" + resourceId);
+            if (window.lapisManager.focusedNodeId === nodeId) {
+                svg.selectAll(".node, .link").classed("focus-dim", false).classed("focus-active", false);
+                window.lapisManager.focusedNodeId = null;
+            } else {
+                svg.selectAll(".node, .link").classed("focus-dim", true).classed("focus-active", false);
+                svg.selectAll(".node").filter(d => d.id === nodeId).classed("focus-active", true).classed("focus-dim", false);
+                svg.selectAll(".link").filter(d => d.source.id === nodeId || d.target.id === nodeId)
+                    .classed("focus-active", true).classed("focus-dim", false)
+                    .each(function(d) {
+                        svg.selectAll(".node").filter(n => n.id === d.source.id || n.id === d.target.id)
+                            .classed("focus-active", true).classed("focus-dim", false);
+                    });
+                window.lapisManager.focusedNodeId = nodeId;
+            }
+        });
+    };
+
+    window.resetZoom = function(id) {
+        if (!window.lapisManager.ready) return;
+        const viz = window.lapisManager.vizes[id];
+        if (viz) {
+            viz.svg.transition().duration(750)
+                   .call(viz.zoom.transform, require('d3').zoomIdentity);
+        }
+    };
+
+    window.highlightTransition = function(resourceId, linkId) {
+        if (!window.lapisManager.ready) return;
+        require(['d3'], function(d3) {
+            d3.selectAll(`#svg-${resourceId} .link-${linkId}`).classed("highlighted", true);
+        });
+    };
+
+    window.clearHighlights = function(resourceId) {
+        if (!window.lapisManager.ready) return;
+        require(['d3'], function(d3) {
+            d3.selectAll(`#svg-${resourceId} .link`).classed("highlighted", false);
+        });
+    };
+
+    // Initialization block
+    require(['d3', 'domReady!'], function (d3) {
         function initVizes() {
-            Object.keys(lapisData).forEach(id => {
-                const data = lapisData[id];
+            Object.keys(window.lapisManager.data).forEach(id => {
+                const data = window.lapisManager.data[id];
                 const svg = d3.select("#svg-" + id);
                 const wrapper = document.getElementById("wrapper-" + id);
                 if (!wrapper) return;
@@ -199,7 +269,7 @@ $resourceIds = $block->getResourceIds();
                 const zoom = d3.zoom().on("zoom", (e) => container.attr("transform", e.transform));
                 svg.call(zoom);
                 
-                vizes[id] = { svg, container, zoom, width, height };
+                window.lapisManager.vizes[id] = { svg, container, zoom, width, height };
 
                 const nodes = data.states.map(s => ({ ...s, id: s.id }));
                 const links = data.transitions.map(t => ({ 
@@ -215,18 +285,13 @@ $resourceIds = $block->getResourceIds();
                     .force("center", d3.forceCenter(width / 2, height / 2))
                     .force("collision", d3.forceCollide().radius(50));
 
-                // Define Minimal Arrow
                 svg.append("defs").append("marker")
                     .attr("id", "arrow-" + id)
                     .attr("viewBox", "0 -5 10 10")
-                    .attr("refX", 25)
-                    .attr("refY", 0)
-                    .attr("markerWidth", 5)
-                    .attr("markerHeight", 5)
+                    .attr("refX", 25).attr("refY", 0)
+                    .attr("markerWidth", 5).attr("markerHeight", 5)
                     .attr("orient", "auto")
-                    .append("path")
-                    .attr("d", "M0,-5L10,0L0,5")
-                    .attr("fill", "#d1d5da");
+                    .append("path").attr("d", "M0,-5L10,0L0,5").attr("fill", "#d1d5da");
 
                 const linkG = container.append("g")
                     .selectAll("path")
@@ -240,11 +305,22 @@ $resourceIds = $block->getResourceIds();
                     .data(nodes)
                     .enter().append("g")
                     .attr("class", d => `node ${d.initial ? 'initial' : ''} ${d.terminal ? 'terminal' : ''}`)
-                    .on("click", (e, d) => toggleFocus(id, d.id))
+                    .on("click", (e, d) => window.toggleFocus(id, d.id))
                     .call(d3.drag()
-                        .on("start", dragstarted)
-                        .on("drag", dragged)
-                        .on("end", dragended));
+                        .on("start", (event) => {
+                            if (!event.active) simulation.alphaTarget(0.3).restart();
+                            event.subject.fx = event.subject.x;
+                            event.subject.fy = event.subject.y;
+                        })
+                        .on("drag", (event) => {
+                            event.subject.fx = event.x;
+                            event.subject.fy = event.y;
+                        })
+                        .on("end", (event) => {
+                            if (!event.active) simulation.alphaTarget(0);
+                            event.subject.fx = null;
+                            event.subject.fy = null;
+                        }));
 
                 nodeG.append("circle").attr("r", 15);
                 nodeG.append("text").text(d => d.label).attr("dy", 35).attr("text-anchor", "middle");
@@ -258,79 +334,9 @@ $resourceIds = $block->getResourceIds();
                     });
                     nodeG.attr("transform", d => `translate(${d.x},${d.y})`);
                 });
-
-                function dragstarted(event) {
-                    if (!event.active) simulation.alphaTarget(0.3).restart();
-                    event.subject.fx = event.subject.x;
-                    event.subject.fy = event.subject.y;
-                }
-                function dragged(event) {
-                    event.subject.fx = event.x;
-                    event.subject.fy = event.y;
-                }
-                function dragended(event) {
-                    if (!event.active) simulation.alphaTarget(0);
-                    event.subject.fx = null;
-                    event.subject.fy = null;
-                    simulation.alphaTarget(0.3).restart(); // Allow graph to settle
-                }
             });
+            window.lapisManager.ready = true;
         }
-
-        let focusedNodeId = null;
-
-        window.toggleFocus = function(resourceId, nodeId) {
-            const svg = d3.select("#svg-" + resourceId);
-            if (focusedNodeId === nodeId) {
-                svg.selectAll(".node, .link").classed("focus-dim", false).classed("focus-active", false);
-                focusedNodeId = null;
-            } else {
-                svg.selectAll(".node, .link").classed("focus-dim", true).classed("focus-active", false);
-                
-                // Highlight node and connected links
-                svg.selectAll(".node").filter(d => d.id === nodeId).classed("focus-active", true).classed("focus-dim", false);
-                svg.selectAll(".link").filter(d => d.source.id === nodeId || d.target.id === nodeId)
-                    .classed("focus-active", true).classed("focus-dim", false)
-                    .each(function(d) {
-                        svg.selectAll(".node").filter(n => n.id === d.source.id || n.id === d.target.id)
-                            .classed("focus-active", true).classed("focus-dim", false);
-                    });
-                focusedNodeId = nodeId;
-            }
-        };
-
-        window.switchResource = function(id) {
-            document.querySelectorAll('.resource-panel').forEach(p => p.style.display = 'none');
-            document.getElementById('lapis-resource-' + id).style.display = 'flex';
-        };
-
-        window.switchTab = function(type) {
-            const panel = document.querySelector('.resource-panel[style*="display: flex"]');
-            if (!panel) return;
-            panel.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-            panel.querySelector('.' + type + '-tab').style.display = (type === 'visual' ? 'flex' : 'block');
-            
-            document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-        };
-
-        window.resetZoom = function(id) {
-            const viz = vizes[id];
-            if (viz) {
-                viz.svg.transition().duration(750)
-                       .call(viz.zoom.transform, d3.zoomIdentity);
-            }
-        };
-
-        window.highlightTransition = function(resourceId, linkId) {
-            d3.selectAll(`#svg-${resourceId} .link-${linkId}`).classed("highlighted", true);
-        };
-
-        window.clearHighlights = function(resourceId) {
-            d3.selectAll(`#svg-${resourceId} .link`).classed("highlighted", false);
-        };
-
-        // Initialize vizes
         initVizes();
     });
 </script>
