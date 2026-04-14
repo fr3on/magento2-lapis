@@ -23,7 +23,6 @@ class Lapis extends Template
         Template\Context $context,
         private RldGenerator $generator,
         private YamlSerializer $serializer,
-        private array $readers = [],
         array $data = []
     ) {
         parent::__construct($context, $data);
@@ -51,6 +50,6 @@ class Lapis extends Template
      */
     public function getResourceIds(): array
     {
-        return array_keys($this->readers);
+        return $this->generator->getResourceIds();
     }
 }

@@ -18,6 +18,16 @@ class RldGenerator
     public function __construct(
         private array $readers = []
     ) {}
+    
+    /**
+     * Get IDs of all registered resources.
+     *
+     * @return string[]
+     */
+    public function getResourceIds(): array
+    {
+        return array_keys($this->readers);
+    }
 
     /**
      * Generate RLD data for all registered readers.

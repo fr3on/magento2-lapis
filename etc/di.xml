@@ -61,15 +61,7 @@
 
     <!-- Admin UI Block Configuration -->
     <type name="Fr3on\Lapis\Block\Adminhtml\Lapis">
-        <arguments>
-            <argument name="readers" xsi:type="array">
-                <item name="order" xsi:type="object">Fr3on\Lapis\Model\Reader\OrderStateReader</item>
-                <item name="invoice" xsi:type="object">Fr3on\Lapis\Model\Reader\InvoiceStateReader</item>
-                <item name="creditmemo" xsi:type="object">Fr3on\Lapis\Model\Reader\CreditmemoStateReader</item>
-                <item name="shipment" xsi:type="object">Fr3on\Lapis\Model\Reader\ShipmentStateReader</item>
-                <item name="cart" xsi:type="object">Fr3on\Lapis\Model\Reader\CartStateReader</item>
-            </argument>
-        </arguments>
+        <!-- Arguments are now successfully inferred from RldGenerator -->
     </type>
 
     <!-- Console Commands -->
