@@ -39,12 +39,12 @@ class InvoiceStateReader implements StateReaderInterface
         $states = [];
         foreach ($statesRaw as $val => $label) {
             $states[] = $this->stateFactory->create([
-                'id' => strtolower($label),
+                'stateId' => strtolower($label),
                 'label' => $label,
                 'magentoValue' => $val,
-                'initial' => ($val === 1),
-                'terminal' => ($val === 2 || $val === 3),
-                'inferred' => false
+                'isInitial' => ($val === 1),
+                'isTerminal' => ($val === 2 || $val === 3),
+                'isInferred' => false
             ]);
         }
         return $states;
@@ -61,11 +61,11 @@ class InvoiceStateReader implements StateReaderInterface
         foreach ($transitions as $t) {
             $result[] = $this->transitionFactory->create([
                 'from' => $t[0],
-                'to' => $t[1],
+                'toState' => $t[1],
                 'via' => $t[2],
                 'actor' => $t[3],
                 'endpoint' => $t[4],
-                'documented' => true
+                'isDocumented' => true
             ]);
         }
         return $result;

@@ -46,12 +46,12 @@ class OrderStateReader implements StateReaderInterface
 
         foreach ($rows as $row) {
             $states[] = $this->stateFactory->create([
-                'id' => $row['status'],
+                'stateId' => $row['status'],
                 'label' => $row['label'],
                 'magentoValue' => $row['status'],
-                'initial' => ($row['state'] === 'new' && $row['is_default']),
-                'terminal' => in_array($row['state'], ['complete', 'closed', 'canceled', 'fraud']),
-                'inferred' => false
+                'isInitial' => ($row['state'] === 'new' && $row['is_default']),
+                'isTerminal' => in_array($row['state'], ['complete', 'closed', 'canceled', 'fraud']),
+                'isInferred' => false
             ]);
         }
 
@@ -79,11 +79,11 @@ class OrderStateReader implements StateReaderInterface
         foreach ($transitions as $t) {
             $result[] = $this->transitionFactory->create([
                 'from' => $t[0],
-                'to' => $t[1],
+                'toState' => $t[1],
                 'via' => $t[2],
                 'actor' => $t[3],
                 'endpoint' => $t[4],
-                'documented' => true
+                'isDocumented' => true
             ]);
         }
 

@@ -35,12 +35,12 @@ class ShipmentStateReader implements StateReaderInterface
         $states = [];
         foreach ($statesRaw as $id => $label) {
             $states[] = $this->stateFactory->create([
-                'id' => $id,
+                'stateId' => $id,
                 'label' => $label,
                 'magentoValue' => null,
-                'initial' => ($id === 'pending'),
-                'terminal' => ($id === 'delivered'),
-                'inferred' => true
+                'isInitial' => ($id === 'pending'),
+                'isTerminal' => ($id === 'delivered'),
+                'isInferred' => true
             ]);
         }
         return $states;
@@ -57,11 +57,11 @@ class ShipmentStateReader implements StateReaderInterface
         foreach ($transitions as $t) {
             $result[] = $this->transitionFactory->create([
                 'from' => $t[0],
-                'to' => $t[1],
+                'toState' => $t[1],
                 'via' => $t[2],
                 'actor' => $t[3],
                 'endpoint' => $t[4],
-                'documented' => false
+                'isDocumented' => false
             ]);
         }
         return $result;
