@@ -2,7 +2,6 @@
   "name": "fr3on/magento2-lapis",
   "description": "Automatic LAPIS lifecycle declarations for Magento 2 REST APIs",
   "type": "magento2-module",
-  "version": "0.1.0",
   "license": "MIT",
   "authors": [
     {
