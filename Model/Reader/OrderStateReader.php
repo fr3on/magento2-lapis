@@ -62,9 +62,9 @@ class OrderStateReader implements StateReaderInterface
     {
         // Core transitions as documented in Magento
         $transitions = [
-            ['new', 'canceled', 'cancel()', 'admin', 'POST /rest/V1/orders/{id}/cancel'],
-            ['new', 'pending_payment', 'place()', 'system', null],
-            ['pending_payment', 'new', 'payment_review()', 'system', null],
+            ['pending', 'canceled', 'cancel()', 'admin', 'POST /rest/V1/orders/{id}/cancel'],
+            ['pending', 'pending_payment', 'place()', 'system', null],
+            ['pending_payment', 'pending', 'payment_review()', 'system', null],
             ['pending_payment', 'canceled', 'expire()', 'system', null],
             ['payment_review', 'processing', 'acceptPayment()', 'admin', 'POST /rest/V1/orders/{id}/capture'],
             ['payment_review', 'canceled', 'denyPayment()', 'admin', null],

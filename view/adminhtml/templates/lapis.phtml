@@ -178,8 +178,9 @@ $resourceIds = $block->getResourceIds();
 </style>
 
 <script>
-    (function() {
-        // 1. Immediate Global Setup for Helpers
+    require(['d3', 'domReady!'], function (d3) {
+        // 1. Initialization and Global Access
+        window.d3 = d3;
         window.lapisManager = {
             ready: false,
             vizes: {},
@@ -187,6 +188,7 @@ $resourceIds = $block->getResourceIds();
             data: <?= json_encode($allData) ?>
         };
 
+        // 2. Global Helpers
         window.switchResource = function(id) {
             document.querySelectorAll('.resource-panel').forEach(p => p.style.display = 'none');
             const target = document.getElementById('lapis-resource-' + id);
@@ -204,8 +206,6 @@ $resourceIds = $block->getResourceIds();
         };
 
         window.toggleFocus = function(resourceId, nodeId) {
-            if (!window.lapisManager.ready || !window.d3) return;
-            const d3 = window.d3;
             const svg = d3.select("#svg-" + resourceId);
             if (window.lapisManager.focusedNodeId === nodeId) {
                 svg.selectAll(".node, .link").classed("focus-dim", false).classed("focus-active", false);
@@ -224,40 +224,22 @@ $resourceIds = $block->getResourceIds();
         };
 
         window.resetZoom = function(id) {
-            if (!window.lapisManager.ready || !window.d3) return;
             const viz = window.lapisManager.vizes[id];
             if (viz) {
-                viz.svg.transition().duration(750).call(viz.zoom.transform, window.d3.zoomIdentity);
+                viz.svg.transition().duration(750).call(viz.zoom.transform, d3.zoomIdentity);
             }
         };
 
         window.highlightTransition = function(resourceId, linkId) {
-            if (!window.lapisManager.ready || !window.d3) return;
-            window.d3.selectAll(`#svg-${resourceId} .link-${linkId}`).classed("highlighted", true);
+            d3.selectAll(`#svg-${resourceId} .link-${linkId}`).classed("highlighted", true);
         };
 
         window.clearHighlights = function(resourceId) {
-            if (!window.lapisManager.ready || !window.d3) return;
-            window.d3.selectAll(`#svg-${resourceId} .link`).classed("highlighted", false);
+            d3.selectAll(`#svg-${resourceId} .link`).classed("highlighted", false);
         };
 
-        // 2. Defensive D3 Loading Pattern
-        const oldDefine = window.define;
-        window.define = undefined; // Force D3 to skip AMD detection
-
-        const script = document.createElement('script');
-        script.src = 'https://d3js.org/d3.v7.min.js';
-        script.async = true;
-        script.onload = function() {
-            window.define = oldDefine; // Restore RequireJS safely
-            if (window.d3) {
-                console.log("LAPIS: D3 initialized globally.");
-                initLapisVisualizer(window.d3);
-            }
-        };
-        document.head.appendChild(script);
-
-        function initLapisVisualizer(d3) {
+        // 3. Graph Engine
+        function initLapisVisualizer() {
             Object.keys(window.lapisManager.data).forEach(id => {
                 const data = window.lapisManager.data[id];
                 const svg = d3.select("#svg-" + id);
@@ -274,7 +256,12 @@ $resourceIds = $block->getResourceIds();
                 window.lapisManager.vizes[id] = { svg, container, zoom, width, height };
 
                 const nodes = data.states.map(s => ({ ...s, id: s.id }));
-                const links = data.transitions.map(t => ({ source: t.from, target: t.to, id: `${t.from}-${t.to}`, label: t.via }));
+                const nodeIds = new Set(nodes.map(n => n.id));
+                
+                // Safe Link Mapping: Skip transitions pointing to missing nodes
+                const links = data.transitions
+                    .filter(t => nodeIds.has(t.from) && nodeIds.has(t.to))
+                    .map(t => ({ source: t.from, target: t.to, id: `${t.from}-${t.to}`, label: t.via }));
 
                 const simulation = d3.forceSimulation(nodes)
                     .force("link", d3.forceLink(links).id(d => d.id).distance(140))
@@ -311,5 +298,7 @@ $resourceIds = $block->getResourceIds();
             });
             window.lapisManager.ready = true;
         }
-    })();
+
+        initLapisVisualizer();
+    });
 </script>

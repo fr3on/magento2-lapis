@@ -1,10 +1,7 @@
 var config = {
-    paths: {
-        'd3': 'https://d3js.org/d3.v7.min'
-    },
-    shim: {
-        'd3': {
-            exports: 'd3'
+    map: {
+        '*': {
+            'd3': 'Fr3on_Lapis/js/d3'
         }
     }
 };
