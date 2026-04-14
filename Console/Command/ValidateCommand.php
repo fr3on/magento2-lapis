@@ -41,8 +41,8 @@ class ValidateCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $etcDir = $this->moduleDirReader->getDir('Fr3on_Lapis', Dir::MODULE_DOC_DIR);
-        $schemaPath = $etcDir . DIRECTORY_SEPARATOR . 'rld-schema.json';
+        $moduleDir = $this->moduleDirReader->getDir('Fr3on_Lapis');
+        $schemaPath = $moduleDir . DIRECTORY_SEPARATOR . 'docs' . DIRECTORY_SEPARATOR . 'rld-schema.json';
 
         if (!file_exists($schemaPath)) {
             $output->writeln('<error>Schema not found at ' . $schemaPath . '</error>');
