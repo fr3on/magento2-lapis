@@ -8,6 +8,7 @@ namespace Fr3on\Lapis\Model\Generator;
 use Fr3on\Lapis\Api\StateReaderInterface;
 use Fr3on\Lapis\Api\Data\StateInterface;
 use Fr3on\Lapis\Api\Data\TransitionInterface;
+use DateTime;
 
 class RldGenerator
 {
@@ -42,7 +43,7 @@ class RldGenerator
     {
         return [
             'resource' => $reader->getResourceId(),
-            'generated' => (new \DateTime())->format('c'),
+            'generated' => (new DateTime())->format('c'),
             'generator' => 'magento2-lapis/0.1.0',
             'api' => [
                 'name' => 'Magento 2 REST API',

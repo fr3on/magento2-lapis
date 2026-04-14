@@ -32,6 +32,13 @@ class ValidateCommand extends Command
             ->setDescription('Validate generated LAPIS RLD files against schema');
     }
 
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int
+     * @SuppressWarnings(PHPMD.StaticAccess)
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $etcDir = $this->moduleDirReader->getDir('Fr3on_Lapis', Dir::MODULE_DOC_DIR);
@@ -55,27 +62,50 @@ class ValidateCommand extends Command
         $hasError = false;
 
         foreach ($files as $file) {
-            $ext = pathinfo($file, PATHINFO_EXTENSION);
-            $contentRaw = $varDir->readFile($file);
-            
-            $data = ($ext === 'yaml') 
-                ? Yaml::parse($contentRaw, Yaml::PARSE_OBJECT_FOR_MAP)
-                : json_decode($contentRaw);
-
+            $data = $this->loadFileData($varDir, $file);
             $validator->validate($data, (object)['$ref' => 'file://' . $schemaPath]);
 
-            if ($validator->isValid()) {
-                $output->writeln('<info>[PASS]</info> ' . $file);
-            } else {
-                $output->writeln('<error>[FAIL]</error> ' . $file);
-                foreach ($validator->getErrors() as $error) {
-                    $output->writeln(sprintf('  - [%s] %s', $error['property'], $error['message']));
-                }
+            if (!$validator->isValid()) {
+                $this->renderErrors($output, $file, $validator);
                 $hasError = true;
+                $validator->reset();
+                continue;
             }
+
+            $output->writeln('<info>[PASS]</info> ' . $file);
             $validator->reset();
         }
 
         return $hasError ? \Magento\Framework\Console\Cli::RETURN_FAILURE : \Magento\Framework\Console\Cli::RETURN_SUCCESS;
+    }
+
+    /**
+     * @param \Magento\Framework\Filesystem\Directory\ReadInterface $varDir
+     * @param string $file
+     * @return mixed
+     * @SuppressWarnings(PHPMD.StaticAccess)
+     */
+    private function loadFileData($varDir, $file)
+    {
+        $ext = pathinfo($file, PATHINFO_EXTENSION);
+        $contentRaw = $varDir->readFile($file);
+        
+        return ($ext === 'yaml') 
+            ? Yaml::parse($contentRaw, Yaml::PARSE_OBJECT_FOR_MAP)
+            : json_decode($contentRaw);
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param string $file
+     * @param Validator $validator
+     * @return void
+     */
+    private function renderErrors(OutputInterface $output, string $file, Validator $validator): void
+    {
+        $output->writeln('<error>[FAIL]</error> ' . $file);
+        foreach ($validator->getErrors() as $error) {
+            $output->writeln(sprintf('  - [%s] %s', $error['property'], $error['message']));
+        }
     }
 }

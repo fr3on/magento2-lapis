@@ -33,6 +33,7 @@ class AddLapisHeadersPlugin
      * @param Rest $subject
      * @param ResponseInterface $response
      * @return ResponseInterface
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function afterDispatch(Rest $subject, ResponseInterface $response): ResponseInterface
     {

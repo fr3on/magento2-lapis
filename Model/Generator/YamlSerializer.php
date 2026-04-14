@@ -7,6 +7,9 @@ namespace Fr3on\Lapis\Model\Generator;
 
 use Symfony\Component\Yaml\Yaml;
 
+/**
+ * @SuppressWarnings(PHPMD.StaticAccess)
+ */
 class YamlSerializer
 {
     /**
