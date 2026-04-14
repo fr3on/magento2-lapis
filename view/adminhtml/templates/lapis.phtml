@@ -178,37 +178,34 @@ $resourceIds = $block->getResourceIds();
 </style>
 
 <script>
-    // Global state and safety wrappers
-    window.lapisManager = {
-        ready: false,
-        vizes: {},
-        focusedNodeId: null,
-        data: <?= json_encode($allData) ?>
-    };
+    (function() {
+        // 1. Immediate Global Setup for Helpers
+        window.lapisManager = {
+            ready: false,
+            vizes: {},
+            focusedNodeId: null,
+            data: <?= json_encode($allData) ?>
+        };
 
-    // Immediate global functions
-    window.switchResource = function(id) {
-        document.querySelectorAll('.resource-panel').forEach(p => p.style.display = 'none');
-        const target = document.getElementById('lapis-resource-' + id);
-        if (target) target.style.display = 'flex';
-    };
+        window.switchResource = function(id) {
+            document.querySelectorAll('.resource-panel').forEach(p => p.style.display = 'none');
+            const target = document.getElementById('lapis-resource-' + id);
+            if (target) target.style.display = 'flex';
+        };
 
-    window.switchTab = function(type) {
-        const panel = document.querySelector('.resource-panel[style*="display: flex"]');
-        if (!panel) return;
-        panel.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-        const content = panel.querySelector('.' + type + '-tab');
-        if (content) content.style.display = (type === 'visual' ? 'flex' : 'block');
-        
-        document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
-        if (event && event.target) {
-            event.target.classList.add('active');
-        }
-    };
+        window.switchTab = function(type) {
+            const panel = document.querySelector('.resource-panel[style*="display: flex"]');
+            if (!panel) return;
+            panel.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            const content = panel.querySelector('.' + type + '-tab');
+            if (content) content.style.display = (type === 'visual' ? 'flex' : 'block');
+            document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+            if (window.event && window.event.target) window.event.target.classList.add('active');
+        };
 
-    window.toggleFocus = function(resourceId, nodeId) {
-        if (!window.lapisManager.ready) return;
-        require(['d3'], function(d3) {
+        window.toggleFocus = function(resourceId, nodeId) {
+            if (!window.lapisManager.ready || !window.d3) return;
+            const d3 = window.d3;
             const svg = d3.select("#svg-" + resourceId);
             if (window.lapisManager.focusedNodeId === nodeId) {
                 svg.selectAll(".node, .link").classed("focus-dim", false).classed("focus-active", false);
@@ -224,27 +221,6 @@ $resourceIds = $block->getResourceIds();
                     });
                 window.lapisManager.focusedNodeId = nodeId;
             }
-        });
-    };
-
-    window.resetZoom = function(id) {
-        if (!window.lapisManager.ready) return;
-        const viz = window.lapisManager.vizes[id];
-        if (viz) {
-            viz.svg.transition().duration(750)
-                   .call(viz.zoom.transform, require('d3').zoomIdentity);
-        }
-    };
-
-    window.highlightTransition = function(resourceId, linkId) {
-        if (!window.lapisManager.ready) return;
-        require(['d3'], function(d3) {
-            d3.selectAll(`#svg-${resourceId} .link-${linkId}`).classed("highlighted", true);
-        });
-    };
-
-    window.clearHighlights = function(resourceId) {
-        if (!window.lapisManager.ready) return;
         };
 
         window.resetZoom = function(id) {
@@ -267,15 +243,17 @@ $resourceIds = $block->getResourceIds();
 
         // 2. Defensive D3 Loading Pattern
         const oldDefine = window.define;
-        window.define = undefined; // Hide RequireJS from D3
+        window.define = undefined; // Force D3 to skip AMD detection
 
         const script = document.createElement('script');
         script.src = 'https://d3js.org/d3.v7.min.js';
         script.async = true;
         script.onload = function() {
-            window.define = oldDefine; // Restore RequireJS
-            console.log("LAPIS: D3 loaded defensively.");
-            initLapisVisualizer(window.d3);
+            window.define = oldDefine; // Restore RequireJS safely
+            if (window.d3) {
+                console.log("LAPIS: D3 initialized globally.");
+                initLapisVisualizer(window.d3);
+            }
         };
         document.head.appendChild(script);
 
@@ -284,10 +262,10 @@ $resourceIds = $block->getResourceIds();
                 const data = window.lapisManager.data[id];
                 const svg = d3.select("#svg-" + id);
                 const wrapper = document.getElementById("wrapper-" + id);
-                if (!wrapper) return;
+                if (!wrapper || !svg.node()) return;
 
-                const width = wrapper.clientWidth;
-                const height = wrapper.clientHeight;
+                const width = wrapper.clientWidth || 800;
+                const height = wrapper.clientHeight || 500;
                 svg.attr("width", "100%").attr("height", "100%").attr("viewBox", `0 0 ${width} ${height}`);
 
                 const container = svg.append("g");
@@ -296,7 +274,7 @@ $resourceIds = $block->getResourceIds();
                 window.lapisManager.vizes[id] = { svg, container, zoom, width, height };
 
                 const nodes = data.states.map(s => ({ ...s, id: s.id }));
-                const links = data.transitions.map(t => ({ source: t.from, target: t.to, id: `${t.from}-${t.to}` }));
+                const links = data.transitions.map(t => ({ source: t.from, target: t.to, id: `${t.from}-${t.to}`, label: t.via }));
 
                 const simulation = d3.forceSimulation(nodes)
                     .force("link", d3.forceLink(links).id(d => d.id).distance(140))
