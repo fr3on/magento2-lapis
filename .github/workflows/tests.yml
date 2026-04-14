@@ -32,7 +32,7 @@ jobs:
       run: composer install --no-progress --prefer-dist
 
     - name: Run PHPUnit
-      run: vendor/bin/phpunit Test/Unit
+      run: vendor/bin/phpunit
 
     - name: Run PHPMD
       run: vendor/bin/phpmd . text cleancode,codesize,controversial,design,naming,unusedcode --exclude vendor,Test
